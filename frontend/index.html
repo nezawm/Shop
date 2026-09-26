@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NezShop — فروشگاه</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Lalezar&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#14171c; --surface:#1d222a; --surface2:#252b35; --line:#323a46;
+  --ink:#ece7dd; --ink-dim:#a7aeb8; --gold:#c9a227; --gold-dim:#8a7220;
+  --brick:#8a4a3a; --radius:14px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14171c;--surface:#1d222a;}}
+:root[data-theme="dark"]{--bg:#14171c;--surface:#1d222a;}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Vazirmatn',sans-serif;overflow-x:hidden}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;background:rgba(20,23,28,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);z-index:20;padding-top:env(safe-area-inset-top,0px)}
+.hbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;max-width:1080px;margin:0 auto}
+.logo{font-family:'Lalezar';font-size:26px;color:var(--gold);letter-spacing:1px}
+.cart-btn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:9px 18px;font-family:inherit;font-size:14px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.cart-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.badge{background:var(--gold);color:#1a1502;border-radius:999px;min-width:20px;height:20px;font-size:12px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.hero{padding:48px 20px 10px;max-width:1080px;margin:0 auto;text-align:center}
+.hero h1{font-family:'Lalezar';font-size:clamp(32px,7vw,56px);line-height:1.25;margin:0 auto 14px;color:var(--ink);max-width:80ch}
+.hero p{color:var(--ink-dim);font-size:16px;max-width:56ch;margin:0 auto}
+.hero-3d{position:relative;width:min(380px,72vw);aspect-ratio:1/1;margin:18px auto 0;cursor:grab;opacity:0;transform:scale(.85);animation:heroIn .8s .1s cubic-bezier(.2,.8,.2,1) forwards}
+.hero-3d:active{cursor:grabbing}
+.hero-3d::before{content:'';position:absolute;inset:-22%;background:radial-gradient(circle,rgba(201,162,39,.28),transparent 70%);filter:blur(14px);z-index:-1}
+.hero-3d canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+.hero-hint{font-size:12px;color:var(--ink-dim);margin-top:2px}
+@keyframes heroIn{to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){.hero-3d{animation:none;opacity:1;transform:none}}
+.chips{display:flex;gap:10px;overflow-x:auto;padding:22px 20px 6px;max-width:1080px;margin:0 auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink-dim);padding:8px 18px;border-radius:999px;font-size:14px;cursor:pointer;font-family:inherit;transition:.15s}
+.chip.active{background:var(--gold);border-color:var(--gold);color:#1a1502;font-weight:600}
+.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:transform .15s,border-color .15s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-3px);border-color:var(--gold-dim)}
+.card:focus-visible{outline:2px solid var(--gold)}
+.thumb{aspect-ratio:4/5;display:flex;align-items:center;justify-content:center;position:relative}
+.thumb svg{width:46%;height:46%;opacity:.9}
+.tag{position:absolute;top:10px;right:10px;background:var(--brick);color:#fff;font-size:11px;padding:3px 9px;border-radius:999px}
+.cbody{padding:12px 14px 16px}
+.cbrand{font-size:12px;color:var(--ink-dim);margin-bottom:2px}
+.cname{font-size:15px;font-weight:600;margin-bottom:8px}
+.price-row{display:flex;align-items:baseline;gap:8px}
+.price{font-size:15px;font-weight:700;color:var(--gold)}
+.old-price{font-size:12px;color:var(--ink-dim);text-decoration:line-through}
+.empty{padding:60px 20px;text-align:center;color:var(--ink-dim)}
+/* Drawer */
+.overlay{position:fixed;inset:0;background:rgba(10,11,13,.6);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+.overlay.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:min(420px,92vw);background:var(--surface);border-inline-end:1px solid var(--line);transform:translateX(-105%);transition:transform .25s ease;z-index:31;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.drawer.show{transform:translateX(0)}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}
+.dhead h2{font-size:18px;margin:0;font-family:'Lalezar';color:var(--gold);font-weight:400}
+.xbtn{background:none;border:none;color:var(--ink-dim);font-size:22px;cursor:pointer;line-height:1}
+.dbody{padding:18px 20px;overflow-y:auto;flex:1}
+.pimg{width:100%;aspect-ratio:1/1;background:var(--surface2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.pimg svg{width:38%;height:38%}
+.swatch-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}
+.swatch{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.swatch.sel{border-color:var(--gold)}
+.size-btn{border:1px solid var(--line);background:var(--surface2);color:var(--ink);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit}
+.size-btn.sel{border-color:var(--gold);color:var(--gold)}
+.qty-row{display:flex;align-items:center;gap:12px;margin:18px 0}
+.qbtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-size:18px;cursor:pointer}
+.btn{width:100%;background:var(--gold);color:#1a1502;border:none;border-radius:10px;padding:13px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:none;border:1px solid var(--gold);color:var(--gold);margin-top:10px}
+.cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.ci-img{width:56px;height:56px;background:var(--surface2);border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center}
+.ci-img svg{width:60%;height:60%}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:14px;font-weight:600}
+.ci-meta{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.ci-remove{background:none;border:none;color:var(--ink-dim);font-size:13px;cursor:pointer;text-decoration:underline;padding:0;margin-top:4px}
+.dfoot{border-top:1px solid var(--line);padding:16px 20px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.total-row{display:flex;justify-content:space-between;margin-bottom:12px;font-size:15px}
+.total-row b{color:var(--gold)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--gold);color:var(--ink);padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;z-index:40;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.success{text-align:center;padding:30px 10px}
+.success svg{width:56px;height:56px;color:var(--gold);margin-bottom:14px}
+footer{text-align:center;color:var(--ink-dim);font-size:13px;padding:30px 20px;border-top:1px solid var(--line);margin-top:20px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hbar">
+    <div class="logo">NezShop</div>
+    <button class="cart-btn" id="cartBtn" aria-label="سبد خرید">
+      سبد خرید <span class="badge" id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>لباس‌هایی که<br>حرفتو می‌زنن</h1>
+  <p>این یک نسخه‌ی نمایشی از فرانت NezShop هست — با داده‌ی نمونه، برای اینکه بشه توی چیدمان و جریان خرید چرخید. هنوز به بک‌اند واقعی روی گیت‌هاب وصل نیست.</p>
+  <div class="hero-3d" id="hero3d" aria-hidden="true"></div>
+  <div class="hero-hint">بکش تا بچرخونیش</div>
+</section>
+
+<nav class="chips" id="chips"></nav>
+<div class="grid" id="grid"></div>
+<footer>© NezShop — نسخه‌ی نمایشی فرانت، بدون اتصال به سرور واقعی</footer>
+
+<div class="overlay" id="overlay"></div>
+
+<aside class="drawer" id="productDrawer">
+  <div class="dhead"><h2>جزئیات محصول</h2><button class="xbtn" data-close>×</button></div>
+  <div class="dbody" id="productBody"></div>
+</aside>
+
+<aside class="drawer" id="cartDrawer" style="left:auto;right:0;border-inline-end:none;border-inline-start:1px solid var(--line);transform:translateX(105%)">
+  <div class="dhead"><h2>سبد خرید</h2><button class="xbtn" data-close>×</button></div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot" id="cartFoot"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ICONS = {
+  shirt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3 3 6l2 3 2-1v11h10V8l2 1 2-3-5-3-2 2h-2L8 3Z"/></svg>',
+  tee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 4 2 7l2.5 3L7 9v11h10V9l2.5 1L22 7l-5-3-2 1.5h-6L7 4Z"/></svg>',
+  pants:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3h12l1 6-2 12h-3l-2-9-2 9H7L5 9l1-6Z"/></svg>',
+  shoe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 17c0-3 2-5 5-6l3-4 4 2-1 3 7 2c1 .3 1 3 1 3H3Z"/></svg>',
+  bag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 8V6a5 5 0 0 1 10 0v2h2l1 13H4L5 8h2Zm2 0h6V6a3 3 0 0 0-6 0v2Z"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>'
+};
+const CATS = ['همه','پیراهن','تیشرت','شلوار','کفش','اکسسوری'];
+const CAT_ICON = {'پیراهن':'shirt','تیشرت':'tee','شلوار':'pants','کفش':'shoe','اکسسوری':'bag'};
+const COLORS = {'مشکی':'#232323','سرمه‌ای':'#28344a','خاکی':'#7a6a4f','بژ':'#cbb99a','قرمز':'#7a2e2e'};
+const SIZES = ['S','M','L','XL','XXL'];
+
+const PRODUCTS = [
+  {id:1,name:'پیراهن کلاسیک لینن',brand:'AVENUE',cat:'پیراهن',price:1290000,discount:0,colors:['مشکی','خاکی'],sizes:['M','L','XL']},
+  {id:2,name:'تیشرت اورسایز پنبه‌ای',brand:'URBN',cat:'تیشرت',price:590000,discount:15,colors:['مشکی','بژ','سرمه‌ای'],sizes:['S','M','L','XL','XXL']},
+  {id:3,name:'شلوار چینو اسلیم',brand:'AVENUE',cat:'شلوار',price:980000,discount:0,colors:['خاکی','سرمه‌ای'],sizes:['M','L','XL']},
+  {id:4,name:'کفش اسنیکر روزمره',brand:'STRIDE',cat:'کفش',price:2150000,discount:20,colors:['مشکی','بژ'],sizes:['M','L','XL']},
+  {id:5,name:'پیراهن دورس مردانه',brand:'URBN',cat:'پیراهن',price:1050000,discount:0,colors:['سرمه‌ای','قرمز'],sizes:['S','M','L']},
+  {id:6,name:'تیشرت یقه گرد ساده',brand:'BASICS',cat:'تیشرت',price:420000,discount:0,colors:['مشکی','بژ','قرمز'],sizes:['S','M','L','XL']},
+  {id:7,name:'شلوار جین راسته',brand:'STRIDE',cat:'شلوار',price:1190000,discount:10,colors:['مشکی','سرمه‌ای'],sizes:['M','L','XL','XXL']},
+  {id:8,name:'کفش کلاسیک چرم',brand:'AVENUE',cat:'کفش',price:2890000,discount:0,colors:['مشکی','خاکی'],sizes:['L','XL']},
+  {id:9,name:'کوله پشتی روزمره',brand:'BASICS',cat:'اکسسوری',price:760000,discount:0,colors:['مشکی','خاکی','بژ'],sizes:['M']},
+];
+
+let activeCat = 'همه';
+let cart = []; // {productId, size, color, qty}
+
+function fmt(n){return n.toLocaleString('fa-IR')+' تومان';}
+function finalPrice(p){return Math.round(p.price*(1-p.discount/100));}
+
+function renderChips(){
+  const el = document.getElementById('chips');
+  el.innerHTML = CATS.map(c=>`<button class="chip ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{activeCat=b.dataset.cat;renderChips();renderGrid();});
+}
+
+function renderGrid(){
+  const list = PRODUCTS.filter(p=>activeCat==='همه'||p.cat===activeCat);
+  const el = document.getElementById('grid');
+  if(!list.length){el.innerHTML='<div class="empty">محصولی در این دسته نیست</div>';return;}
+  el.innerHTML = list.map(p=>`
+    <div class="card" data-id="${p.id}" tabindex="0" role="button" aria-label="${p.name}">
+      <div class="thumb" style="background:${COLORS[p.colors[0]]}22">
+        ${p.discount?`<span class="tag">٪${p.discount} تخفیف</span>`:''}
+        <div style="color:${COLORS[p.colors[0]]}">${ICONS[CAT_ICON[p.cat]]}</div>
+      </div>
+      <div class="cbody">
+        <div class="cbrand">${p.brand}</div>
+        <div class="cname">${p.name}</div>
+        <div class="price-row">
+          <span class="price">${fmt(finalPrice(p))}</span>
+          ${p.discount?`<span class="old-price">${fmt(p.price)}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+  el.querySelectorAll('.card').forEach(c=>{
+    const open=()=>openProduct(+c.dataset.id);
+    c.onclick=open;
+    c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}};
+  });
+}
+
+let curProduct=null, curColor=null, curSize=null;
+function openProduct(id){
+  curProduct = PRODUCTS.find(p=>p.id===id);
+  curColor = curProduct.colors[0];
+  curSize = null;
+  renderProductBody();
+  showOverlay(); document.getElementById('productDrawer').classList.add('show');
+}
+function renderProductBody(){
+  const p=curProduct;
+  document.getElementById('productBody').innerHTML = `
+    <div class="pimg" style="background:${COLORS[curColor]}22"><div style="color:${COLORS[curColor]}">${ICONS[CAT_ICON[p.cat]]}</div></div>
+    <div class="cbrand">${p.brand}</div>
+    <h3 style="margin:4px 0 6px;font-size:19px">${p.name}</h3>
+    <div class="price-row" style="margin-bottom:14px">
+      <span class="price" style="font-size:19px">${fmt(finalPrice(p))}</span>
+      ${p.discount?`<span class="old-price">${fmt(p.price)}</span>`:''}
+    </div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:6px">رنگ</div>
+    <div class="swatch-row">${p.colors.map(c=>`<span class="swatch ${c===curColor?'sel':''}" data-color="${c}" style="background:${COLORS[c]}" title="${c}"></span>`).join('')}</div>
+    <div style="font-size:13px;color:var(--ink-dim);margin-bottom:6px">سایز</div>
+    <div class="swatch-row">${p.sizes.map(s=>`<button class="size-btn ${s===curSize?'sel':''}" data-size="${s}">${s}</button>`).join('')}</div>
+    <button class="btn" id="addBtn" ${curSize?'':'disabled'}>افزودن به سبد</button>
+  `;
+  document.querySelectorAll('#productBody .swatch').forEach(s=>s.onclick=()=>{curColor=s.dataset.color;renderProductBody();});
+  document.querySelectorAll('#productBody .size-btn').forEach(s=>s.onclick=()=>{curSize=s.dataset.size;renderProductBody();});
+  const addBtn=document.getElementById('addBtn');
+  if(addBtn) addBtn.onclick=()=>{
+    cart.push({productId:p.id,color:curColor,size:curSize,qty:1});
+    renderCartCount();
+    closeDrawers();
+    showToast(`«${p.name}» به سبد اضافه شد`);
+  };
+}
+
+function renderCartCount(){
+  document.getElementById('cartCount').textContent = cart.reduce((s,i)=>s+i.qty,0);
+}
+
+function openCart(){
+  renderCartBody();
+  showOverlay(); document.getElementById('cartDrawer').classList.add('show');
+}
+function renderCartBody(){
+  const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
+  if(!cart.length){
+    body.innerHTML='<div class="empty">سبد خریدت خالیه</div>';
+    foot.innerHTML='';
+    return;
+  }
+  body.innerHTML = cart.map((it,idx)=>{
+    const p=PRODUCTS.find(pp=>pp.id===it.productId);
+    return `<div class="cart-item">
+      <div class="ci-img" style="color:${COLORS[it.color]}">${ICONS[CAT_ICON[p.cat]]}</div>
+      <div class="ci-info">
+        <div class="ci-name">${p.name}</div>
+        <div class="ci-meta">${it.color} · سایز ${it.size} · ${it.qty} عدد</div>
+        <div class="ci-meta">${fmt(finalPrice(p)*it.qty)}</div>
+        <button class="ci-remove" data-idx="${idx}">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+  body.querySelectorAll('.ci-remove').forEach(b=>b.onclick=()=>{cart.splice(+b.dataset.idx,1);renderCartCount();renderCartBody();});
+  const total = cart.reduce((s,it)=>s+finalPrice(PRODUCTS.find(p=>p.id===it.productId))*it.qty,0);
+  foot.innerHTML = `
+    <div class="total-row"><span>جمع کل</span><b>${fmt(total)}</b></div>
+    <button class="btn" id="checkoutBtn">ثبت سفارش</button>`;
+  document.getElementById('checkoutBtn').onclick=()=>{
+    body.innerHTML = `<div class="success">${ICONS.check}<h3>سفارش ثبت شد</h3><p style="color:var(--ink-dim);font-size:14px">این فقط یک نمای نمایشیه — به درگاه پرداخت واقعی وصل نیست.</p></div>`;
+    foot.innerHTML = `<button class="btn ghost" id="backShop">بازگشت به فروشگاه</button>`;
+    document.getElementById('backShop').onclick=()=>{cart=[];renderCartCount();closeDrawers();};
+  };
+}
+
+function showOverlay(){document.getElementById('overlay').classList.add('show');}
+function closeDrawers(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('productDrawer').classList.remove('show');
+  document.getElementById('cartDrawer').classList.remove('show');
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+document.getElementById('cartBtn').onclick=openCart;
+document.getElementById('overlay').onclick=closeDrawers;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeDrawers);
+
+renderChips(); renderGrid(); renderCartCount();
+
+function makeFabricTexture(base, weave){
+  const c=document.createElement('canvas'); c.width=512;c.height=512;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle=base; ctx.fillRect(0,0,512,512);
+  ctx.globalAlpha=0.035;
+  for(let i=0;i<512;i+=2){
+    ctx.strokeStyle = (i/2)%2===0 ? '#000' : '#fff';
+    ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(512,i); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,512); ctx.stroke();
+  }
+  ctx.globalAlpha=0.05;
+  for(let i=0;i<3000;i++){ctx.fillStyle=Math.random()>0.5?'#000':'#fff';ctx.fillRect(Math.random()*512,Math.random()*512,1,1);}
+  const tex=new THREE.CanvasTexture(c);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(weave,weave);
+  return tex;
+}
+
+function initHero3D(){
+  const el = document.getElementById('hero3d');
+  if(!el || !window.THREE) return;
+  const w = el.clientWidth, h = el.clientHeight;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(30, w/h, 0.1, 100);
+  camera.position.set(0,0.15,10.2);
+  const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setSize(w,h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  el.appendChild(renderer.domElement);
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const s = new THREE.Shape();
+  s.moveTo(-1.55,2.05);
+  s.lineTo(-0.55,2.05);
+  s.quadraticCurveTo(0,1.55,0.55,2.05);
+  s.lineTo(1.55,2.05);
+  s.quadraticCurveTo(2.15,1.85,2.55,1.15);
+  s.lineTo(1.85,0.3);
+  s.quadraticCurveTo(1.95,-1.1,1.75,-2.35);
+  s.lineTo(-1.75,-2.35);
+  s.quadraticCurveTo(-1.95,-1.1,-1.85,0.3);
+  s.lineTo(-2.55,1.15);
+  s.quadraticCurveTo(-2.15,1.85,-1.55,2.05);
+  const geo = new THREE.ExtrudeGeometry(s,{depth:0.42,bevelEnabled:true,bevelThickness:0.16,bevelSize:0.14,bevelSegments:8,curveSegments:32});
+  geo.center();
+
+  // single smooth dome (not a wavy ripple) so the fabric curves naturally over the chest
+  const pos = geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), y=pos.getY(i), z=pos.getZ(i);
+    const dome = 0.24*Math.exp(-((x*x)/(2*1.15*1.15)+((y-0.1)*(y-0.1))/(2*1.7*1.7)));
+    pos.setZ(i, z + (z>0 ? dome : -dome*0.55));
+  }
+  pos.needsUpdate = true; geo.computeVertexNormals();
+
+  const fabricColor = '#efece3';
+  const colorMap = makeFabricTexture(fabricColor,6);
+  const bumpMap = makeFabricTexture('#808080',6);
+  const bodyMat = new THREE.MeshStandardMaterial({map:colorMap,bumpMap:bumpMap,bumpScale:0.006,roughness:0.88,metalness:0.02});
+  const body = new THREE.Mesh(geo, bodyMat);
+  body.castShadow = true;
+  group.add(body);
+
+  const ribMat = new THREE.MeshStandardMaterial({color:fabricColor,roughness:0.9,metalness:0.02});
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.5,0.06,10,32,Math.PI*1.35), ribMat);
+  collar.position.set(0,1.98,0.05);
+  collar.rotation.set(Math.PI/2,0,-Math.PI*1.17);
+  group.add(collar);
+  [[-2.35,1.02],[2.35,1.02]].forEach(([x,y])=>{
+    const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.4,0.045,8,20), ribMat);
+    cuff.position.set(x,y,0.1);
+    cuff.rotation.set(0.25,0,x<0?0.5:-0.5);
+    group.add(cuff);
+  });
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const key=new THREE.DirectionalLight(0xfff6e6,1.05); key.position.set(3.5,4.5,5);
+  key.castShadow=true; key.shadow.mapSize.set(1024,1024);
+  key.shadow.camera.left=-4; key.shadow.camera.right=4; key.shadow.camera.top=4; key.shadow.camera.bottom=-4;
+  scene.add(key);
+  const fill=new THREE.DirectionalLight(0xdfe6ff,0.45); fill.position.set(-4,-0.5,3.5); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xffe9b8,0.4); rim.position.set(-2.5,2.5,-5); scene.add(rim);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(10,10), new THREE.ShadowMaterial({opacity:0.28}));
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = -2.62;
+  ground.receiveShadow = true;
+  group.add(ground);
+
+  let rotY=0.35, rotX=0.05, dragging=false, lastX=0, lastY=0;
+  let autoRotate = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  group.rotation.set(rotX,rotY,0);
+
+  const pt = e => e.touches ? {x:e.touches[0].clientX,y:e.touches[0].clientY} : {x:e.clientX,y:e.clientY};
+  el.addEventListener('pointerdown', e=>{dragging=true;autoRotate=false;const p=pt(e);lastX=p.x;lastY=p.y;});
+  window.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const p=pt(e);
+    rotY += (p.x-lastX)*0.008; rotX += (p.y-lastY)*0.006;
+    rotX = Math.max(-0.35, Math.min(0.35, rotX));
+    lastX=p.x; lastY=p.y;
+    group.rotation.set(rotX,rotY,0);
+  });
+  window.addEventListener('pointerup', ()=>dragging=false);
+
+  (function animate(){
+    requestAnimationFrame(animate);
+    if(autoRotate){ rotY += 0.005; group.rotation.y = rotY; }
+    renderer.render(scene,camera);
+  })();
+
+  window.addEventListener('resize', ()=>{
+    const w2=el.clientWidth, h2=el.clientHeight;
+    if(!w2||!h2) return;
+    camera.aspect=w2/h2; camera.updateProjectionMatrix();
+    renderer.setSize(w2,h2);
+  });
+}
+initHero3D();
+</script>
+</body>
+</html>
